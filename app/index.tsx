@@ -13,7 +13,9 @@ export default function StartScreen() {
       style={styles.container}
     >
       <View style={styles.content}>
-        <Text style={styles.title}>Taboo für Sila und Eymen</Text>
+        <Text style={styles.title}>Taboo</Text>
+        <Text style={{color:"red"}}>vor</Text>
+        <Text style={styles.title2}>little Monkeys</Text>
         <View style={styles.imageGrid}>
           <TouchableOpacity onPress={handleImagePress} style={styles.imageContainer}>
             <Image
@@ -41,6 +43,14 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontFamily: 'Inter-Bold',
     color: '#ffffff',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 5,
+  },
+  title2: {
+    fontSize: 24,
+    fontFamily: 'Inter-Bold',
+    color: 'yellow',
     marginBottom: 40,
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 2, height: 2 },
