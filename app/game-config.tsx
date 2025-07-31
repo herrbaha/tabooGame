@@ -1,13 +1,21 @@
-import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity } from 'react-native';
-import { router } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useGameStore } from '@/store/gameStore';
-import { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
+import { router } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
+import { useGameStore } from "@/store/gameStore";
+import { useState } from "react";
 
 const playerCounts = [2, 3, 4];
 const timeOptions = [30, 60, 120, 240];
 const scoreOptions = [10, 30, 50, 100];
 const passOptions = [1, 3, 6, 9];
+const roundOptions = [1, 2, 3];
 
 export default function GameConfig() {
   const {
@@ -15,15 +23,22 @@ export default function GameConfig() {
     selectedTime,
     targetScore,
     passCount,
+    maxRounds,
     setPlayerCount,
     setTime,
     setTargetScore,
     setPassCount,
+    setMaxRounds,
     setPlayers,
+    setCurrentScore,
+    setCurrentWordIndex,
+    setCurrentPlayer,
+    setTimeLeft,
+    setCurrentRound,
   } = useGameStore();
 
   const [playerNames, setPlayerNames] = useState<string[]>(
-    Array(selectedPlayerCount).fill('')
+    Array(selectedPlayerCount).fill("")
   );
 
   const updatePlayerName = (index: number, name: string) => {
@@ -33,17 +48,27 @@ export default function GameConfig() {
   };
 
   const handleStartGame = () => {
-    const players = playerNames.map(name => ({
-      name: name.trim() || `Takım ${playerNames.indexOf(name) + 1}`,
+    const players = playerNames.map((name, index) => ({
+      name: name.trim() || `Takım ${index + 1}`,
       score: 0,
+      passesUsed: 0,
     }));
     setPlayers(players);
-    router.push('/game');
+
+    // Oyun başlangıç state'lerini ayarla
+    setTime(selectedTime);
+    setCurrentScore(0);
+    setCurrentWordIndex(Math.floor(Math.random() * 4302)); // Rastgele başlangıç noktası
+    setCurrentPlayer(0);
+    setTimeLeft(selectedTime);
+    setCurrentRound(1);
+
+    router.push("/game");
   };
 
   return (
     <LinearGradient
-      colors={['#1a237e', '#3949ab', '#5c6bc0']}
+      colors={["#1a237e", "#3949ab", "#5c6bc0"]}
       style={styles.container}
     >
       <ScrollView style={styles.scrollView}>
@@ -53,7 +78,7 @@ export default function GameConfig() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Oyuncu Sayısı</Text>
             <View style={styles.optionsGrid}>
-              {playerCounts.map(count => (
+              {playerCounts.map((count) => (
                 <TouchableOpacity
                   key={count}
                   style={[
@@ -62,13 +87,18 @@ export default function GameConfig() {
                   ]}
                   onPress={() => {
                     setPlayerCount(count);
-                    setPlayerNames(Array(count).fill(''));
+                    setPlayerNames(Array(count).fill(""));
                   }}
                 >
-                  <Text style={[
-                    styles.optionText,
-                    selectedPlayerCount === count && styles.selectedOptionText,
-                  ]}>{count} Oyuncu</Text>
+                  <Text
+                    style={[
+                      styles.optionText,
+                      selectedPlayerCount === count &&
+                        styles.selectedOptionText,
+                    ]}
+                  >
+                    {count} Oyuncu
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -91,7 +121,7 @@ export default function GameConfig() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Süre (Saniye)</Text>
             <View style={styles.optionsGrid}>
-              {timeOptions.map(time => (
+              {timeOptions.map((time) => (
                 <TouchableOpacity
                   key={time}
                   style={[
@@ -100,10 +130,14 @@ export default function GameConfig() {
                   ]}
                   onPress={() => setTime(time)}
                 >
-                  <Text style={[
-                    styles.optionText,
-                    selectedTime === time && styles.selectedOptionText,
-                  ]}>{time}s</Text>
+                  <Text
+                    style={[
+                      styles.optionText,
+                      selectedTime === time && styles.selectedOptionText,
+                    ]}
+                  >
+                    {time}s
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -112,7 +146,7 @@ export default function GameConfig() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Hedef Skor</Text>
             <View style={styles.optionsGrid}>
-              {scoreOptions.map(score => (
+              {scoreOptions.map((score) => (
                 <TouchableOpacity
                   key={score}
                   style={[
@@ -121,10 +155,14 @@ export default function GameConfig() {
                   ]}
                   onPress={() => setTargetScore(score)}
                 >
-                  <Text style={[
-                    styles.optionText,
-                    targetScore === score && styles.selectedOptionText,
-                  ]}>{score} Puan</Text>
+                  <Text
+                    style={[
+                      styles.optionText,
+                      targetScore === score && styles.selectedOptionText,
+                    ]}
+                  >
+                    {score} Puan
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -133,7 +171,7 @@ export default function GameConfig() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Pas Hakkı</Text>
             <View style={styles.optionsGrid}>
-              {passOptions.map(pass => (
+              {passOptions.map((pass) => (
                 <TouchableOpacity
                   key={pass}
                   style={[
@@ -142,10 +180,39 @@ export default function GameConfig() {
                   ]}
                   onPress={() => setPassCount(pass)}
                 >
-                  <Text style={[
-                    styles.optionText,
-                    passCount === pass && styles.selectedOptionText,
-                  ]}>{pass} Pas</Text>
+                  <Text
+                    style={[
+                      styles.optionText,
+                      passCount === pass && styles.selectedOptionText,
+                    ]}
+                  >
+                    {pass} Pas
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Tur Sayısı</Text>
+            <View style={styles.optionsGrid}>
+              {roundOptions.map((round) => (
+                <TouchableOpacity
+                  key={round}
+                  style={[
+                    styles.option,
+                    maxRounds === round && styles.selectedOption,
+                  ]}
+                  onPress={() => setMaxRounds(round)}
+                >
+                  <Text
+                    style={[
+                      styles.optionText,
+                      maxRounds === round && styles.selectedOptionText,
+                    ]}
+                  >
+                    {round} Tur
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -175,9 +242,9 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontFamily: 'Inter-Bold',
-    color: '#ffffff',
-    textAlign: 'center',
+    fontFamily: "Inter-Bold",
+    color: "#ffffff",
+    textAlign: "center",
     marginBottom: 30,
   },
   section: {
@@ -185,53 +252,53 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontFamily: 'Inter-SemiBold',
-    color: '#ffffff',
+    fontFamily: "Inter-SemiBold",
+    color: "#ffffff",
     marginBottom: 12,
   },
   optionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 10,
   },
   option: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 12,
     minWidth: 100,
-    alignItems: 'center',
+    alignItems: "center",
   },
   selectedOption: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
   },
   optionText: {
-    color: '#ffffff',
-    fontFamily: 'Inter-SemiBold',
+    color: "#ffffff",
+    fontFamily: "Inter-SemiBold",
     fontSize: 16,
   },
   selectedOptionText: {
-    color: '#1a237e',
+    color: "#1a237e",
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 12,
     padding: 12,
-    color: '#ffffff',
-    fontFamily: 'Inter-Regular',
+    color: "#ffffff",
+    fontFamily: "Inter-Regular",
     fontSize: 16,
     marginBottom: 10,
   },
   startButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: "#4CAF50",
     paddingVertical: 16,
     borderRadius: 12,
     marginTop: 20,
   },
   startButtonText: {
-    color: '#ffffff',
-    fontFamily: 'Inter-Bold',
+    color: "#ffffff",
+    fontFamily: "Inter-Bold",
     fontSize: 18,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });
